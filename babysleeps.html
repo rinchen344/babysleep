@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Baby Sleep">
+    <title>Baby Sleep Tracker</title>
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        body {
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #app {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+        }
+        
+        .header {
+            padding: 60px 24px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 0 0 40px 40px;
+        }
+        
+        .baby-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: none;
+            border: none;
+            color: white;
+            width: 100%;
+            cursor: pointer;
+        }
+        
+        .avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            flex-shrink: 0;
+        }
+        
+        .baby-name { 
+            font-size: 26px; 
+            font-weight: 800; 
+            margin-bottom: 4px; 
+        }
+        
+        .baby-age { 
+            font-size: 15px; 
+            opacity: 0.9; 
+            font-weight: 600; 
+        }
+        
+        .settings-btn {
+            position: absolute;
+            top: 60px;
+            right: 24px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 22px;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+        }
+        
+        .status-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            margin: -30px 20px 20px;
+            border-radius: 24px;
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .status-label {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.7;
+        }
+        
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        
+        .status-badge.awake { 
+            background: #f6ad55; 
+            color: #744210; 
+        }
+        
+        .status-badge.sleeping {
+            background: #48bb78;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+        
+        .timer {
+            font-size: 64px;
+            font-weight: 200;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -2px;
+            margin: 20px 0;
+            font-family: 'SF Mono', SFMono-Regular, Consolas, monospace;
+        }
+        
+        .timer-label {
+            text-align: center;
+            font-size: 15px;
+            opacity: 0.7;
+            margin-bottom: 24px;
+            font-weight: 600;
+        }
+        
+        .action-btn {
+            width: 100%;
+            padding: 20px;
+            border-radius: 16px;
+            border: none;
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.2s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            cursor: pointer;
+        }
+        
+        .action-btn:active { 
+            transform: scale(0.96); 
+        }
+        
+        .action-btn.start {
+            background: linear-gradient(135deg, #00d9c0 0%, #00b894 100%);
+        }
+        
+        .action-btn.stop {
+            background: linear-gradient(135deg, #ff6584 0%, #ff416c 100%);
+        }
+        
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 0 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 12px;
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.6;
+            font-weight: 600;
+        }
+        
+        .history {
+            padding: 0 20px 100px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .view-all {
+            font-size: 15px;
+            color: #667eea;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .sleep-item {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+        
+        .sleep-item:active { 
+            transform: scale(0.98); 
+        }
+        
+        .sleep-time {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .sleep-type {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        .sleep-type.nap { 
+            background: #667eea; 
+            color: white; 
+        }
+        
+        .sleep-type.night { 
+            background: #2d3748; 
+            color: white; 
+        }
+        
+        .sleep-duration {
+            font-size: 14px;
+            opacity: 0.7;
+            font-weight: 600;
+        }
+        
+        .delete-btn {
+            background: #fc8181;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 24px;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            z-index: 1000;
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+        
+        .fab:active { 
+            transform: scale(0.9); 
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: none;
+            align-items: flex-end;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+        
+        .modal-content {
+            background: #1a1a2e;
+            width: 100%;
+            border-radius: 30px 30px 0 0;
+            padding: 30px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: translateY(100%);
+            transition: transform 0.3s;
+        }
+        
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .modal-title {
+            font-size: 28px;
+            font-weight: 800;
+        }
+        
+        .close-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-label {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.7;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        .type-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .type-option {
+            padding: 16px;
+            border-radius: 14px;
+            border: 2px solid rgba(255,255,255,0.1);
+            text-align: center;
+            font-weight: 700;
+            font-size: 16px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .type-option.selected {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.2);
+        }
+        
+        .datetime-input {
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            border: 2px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: white;
+            font-size: 17px;
+            font-family: inherit;
+        }
+        
+        .quality-stars {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            padding: 10px;
+        }
+        
+        .star {
+            font-size: 36px;
+            opacity: 0.3;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .star.active {
+            opacity: 1;
+        }
+        
+        .notes-input {
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            border: 2px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: white;
+            font-size: 17px;
+            font-family: inherit;
+            min-height: 120px;
+            resize: none;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            opacity: 0.5;
+        }
+        
+        .empty-icon { 
+            font-size: 60px; 
+            margin-bottom: 16px; 
+        }
+        
+        .baby-selector {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .baby-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .baby-option:hover, .baby-option.selected {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .baby-option-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .color-picker {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .color-option {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: transform 0.2s;
+        }
+        
+        .color-option.selected {
+            border-color: white;
+            transform: scale(1.1);
+        }
+        
+        .manage-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            border: 2px solid rgba(255,255,255,0.2);
+            background: transparent;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 12px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <button class="baby-btn" onclick="showBabySelector()">
+                <div class="avatar" id="babyAvatar" style="background: #6C63FF;">👶</div>
+                <div>
+                    <div class="baby-name" id="babyName">Baby</div>
+                    <div class="baby-age" id="babyAge">0 months old</div>
+                </div>
+            </button>
+            <button class="settings-btn" onclick="showBabyModal()">⚙️</button>
+        </div>
+
+        <div class="status-card">
+            <div class="status-header">
+                <span class="status-label">Current Status</span>
+                <span class="status-badge awake" id="statusBadge">AWAKE</span>
+            </div>
+            <div class="timer" id="timer">00:00:00</div>
+            <div class="timer-label" id="timerLabel">Time since last sleep</div>
+            <button class="action-btn start" id="actionBtn" onclick="toggleSleep()">
+                <span id="btnIcon">🌙</span>
+                <span id="btnText">Start Sleep</span>
+            </button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">😴</div>
+                <div class="stat-value" id="totalSleep">0h</div>
+                <div class="stat-label">Total Sleep (24h)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🌙</div>
+                <div class="stat-value" id="nightSleep">0h</div>
+                <div class="stat-label">Night Sleep</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">☀️</div>
+                <div class="stat-value" id="napCount">0</div>
+                <div class="stat-label">Naps Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-value" id="avgDuration">0m</div>
+                <div class="stat-label">Avg Duration</div>
+            </div>
+        </div>
+
+        <div class="history">
+            <div class="section-title">
+                Today's Sleep
+                <span class="view-all" onclick="showAllHistory()">View All</span>
+            </div>
+            <div id="sleepList"></div>
+        </div>
+    </div>
+
+    <button class="fab" onclick="showAddModal()">+</button>
+
+    <!-- Baby Selector Modal -->
+    <div class="modal" id="babySelectorModal" onclick="closeModalOnBackground(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">Select Baby</div>
+                <button class="close-btn" onclick="closeBabySelector()">×</button>
+            </div>
+            <div class="baby-selector" id="babySelector"></div>
+            <button class="manage-btn" onclick="showBabyListModal()">Manage Babies</button>
+        </div>
+    </div>
+
+    <!-- Add Sleep Modal -->
+    <div class="modal" id="addModal" onclick="closeModalOnBackground(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">Log Sleep</div>
+                <button class="close-btn" onclick="closeAddModal()">×</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Sleep Type</label>
+                <div class="type-selector">
+                    <div class="type-option selected" onclick="selectType(this, 'nap')">☀️ Nap</div>
+                    <div class="type-option" onclick="selectType(this, 'night')">🌙 Night</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Start Time</label>
+                <input type="datetime-local" class="datetime-input" id="startTime">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">End Time</label>
+                <input type="datetime-local" class="datetime-input" id="endTime">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Sleep Quality</label>
+                <div class="quality-stars" id="qualityStars">
+                    <span class="star" onclick="setQuality(1)">⭐</span>
+                    <span class="star" onclick="setQuality(2)">⭐</span>
+                    <span class="star" onclick="setQuality(3)">⭐</span>
+                    <span class="star" onclick="setQuality(4)">⭐</span>
+                    <span class="star" onclick="setQuality(5)">⭐</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Notes</label>
+                <textarea class="notes-input" id="sleepNotes" placeholder="How did the sleep go?"></textarea>
+            </div>
+
+            <button class="submit-btn" onclick="saveSleep()">Save Sleep Record</button>
+        </div>
+    </div>
+
+    <!-- Baby List Modal -->
+    <div class="modal" id="babyListModal" onclick="closeModalOnBackground(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">Manage Babies</div>
+                <button class="close-btn" onclick="closeBabyListModal()">×</button>
+            </div>
+            <div id="babyList"></div>
+            <button class="submit-btn" onclick="showAddBabyModal()" style="margin-top: 20px;">Add New Baby</button>
+        </div>
+    </div>
+
+    <!-- Add Baby Modal -->
+    <div class="modal" id="addBabyModal" onclick="closeModalOnBackground(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">New Baby</div>
+                <button class="close-btn" onclick="closeAddBabyModal()">×</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Baby's Name</label>
+                <input type="text" class="datetime-input" id="newBabyName" placeholder="Enter name">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Birth Date</label>
+                <input type="date" class="datetime-input" id="newBabyBirth">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Choose Color</label>
+                <div class="color-picker" id="colorPicker"></div>
+            </div>
+
+            <button class="submit-btn" onclick="addBaby()">Add Baby</button>
+        </div>
+    </div>
+
+    <!-- Edit Baby Modal -->
+    <div class="modal" id="editBabyModal" onclick="closeModalOnBackground(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">Edit Baby</div>
+                <button class="close-btn" onclick="closeEditBabyModal()">×</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Baby's Name</label>
+                <input type="text" class="datetime-input" id="editBabyName" placeholder="Enter name">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Birth Date</label>
+                <input type="date" class="datetime-input" id="editBabyBirth">
+            </div>
+
+            <button class="submit-btn" onclick="saveBabyEdit()">Save Changes</button>
+            <button class="manage-btn" onclick="deleteCurrentBaby()" style="color: #fc8181; border-color: #fc8181;">Delete Baby</button>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let isSleeping = false;
+        let sleepStartTime = null;
+        let timerInterval = null;
+        let currentQuality = 0;
+        let currentType = 'nap';
+        let selectedColor = '6C63FF';
+        let editingBabyId = null;
+
+        // Default data structure
+        const defaultData = {
+            babies: [
+                { id: '1', name: 'Baby', birthDate: null, color: '6C63FF' }
+            ],
+            selectedBabyId: '1',
+            records: []
+        };
+
+        // Load data from localStorage
+        function loadData() {
+            const saved = localStorage.getItem('babySleepData');
+            if (saved) {
+                return JSON.parse(saved);
+            }
+            return defaultData;
+        }
+
+        // Save data to localStorage
+        function saveData(data) {
+            localStorage.setItem('babySleepData', JSON.stringify(data));
+        }
+
+        let data = loadData();
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initColorPicker();
+            updateUI();
+            checkOngoingSleep();
+            
+            // Set default times
+            const now = new Date();
+            const oneHourAgo = new Date(now - 60 * 60 * 1000);
+            document.getElementById('startTime').value = formatDateTimeLocal(oneHourAgo);
+            document.getElementById('endTime').value = formatDateTimeLocal(now);
+        });
+
+        function initColorPicker() {
+            const colors = ['6C63FF', 'FF6584', '00D9C0', 'F6E05E', '9F7AEA', 'ED8936', '38B2AC', 'E53E3E'];
+            const picker = document.getElementById('colorPicker');
+            picker.innerHTML = colors.map(color => `
+                <div class="color-option ${color === selectedColor ? 'selected' : ''}" 
+                     style="background: #${color}" 
+                     onclick="selectColor('${color}')"></div>
+            `).join('');
+        }
+
+        function selectColor(color) {
+            selectedColor = color;
+            initColorPicker();
+        }
+
+        function getCurrentBaby() {
+            return data.babies.find(b => b.id === data.selectedBabyId) || data.babies[0];
+        }
+
+        function getBabyRecords(babyId) {
+            return data.records.filter(r => r.babyId === babyId);
+        }
+
+        function updateUI() {
+            const baby = getCurrentBaby();
+            document.getElementById('babyName').textContent = baby.name;
+            document.getElementById('babyAge').textContent = calculateAge(baby.birthDate);
+            document.getElementById('babyAvatar').textContent = getAvatar(baby.name);
+            document.getElementById('babyAvatar').style.background = '#' + baby.color;
+            
+            updateStats();
+            renderSleepList();
+        }
+
+        function getAvatar(name) {
+            const emojis = ['👶', '👧', '👦', '🧒', '👼', '🤱', '🍼', '🧸', '🎀', '🚼'];
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) {
+                hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            return emojis[Math.abs(hash) % emojis.length];
+        }
+
+        function calculateAge(birthDate) {
+            if (!birthDate) return '0 months old';
+            const birth = new Date(birthDate);
+            const now = new Date();
+            const diffTime = Math.abs(now - birth);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays < 30) return `${diffDays} days old`;
+            if (diffDays < 365) {
+                const months = Math.floor(diffDays / 30);
+                return `${months} month${months > 1 ? 's' : ''} old`;
+            }
+            const years = Math.floor(diffDays / 365);
+            const months = Math.floor((diffDays % 365) / 30);
+            return `${years}y ${months}m old`;
+        }
+
+        function formatDateTimeLocal(date) {
+            const pad = n => n.toString().padStart(2, '0');
+            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+        }
+
+        function toggleSleep() {
+            if (isSleeping) {
+                stopSleep();
+            } else {
+                startSleep();
+            }
+        }
+
+        function startSleep() {
+            sleepStartTime = new Date();
+            localStorage.setItem('ongoingSleep', JSON.stringify({
+                startTime: sleepStartTime.toISOString(),
+                babyId: data.selectedBabyId
+            }));
+            
+            timerInterval = setInterval(() => {
+                const now = new Date();
+                const diff = now - sleepStartTime;
+                document.getElementById('timer').textContent = formatDuration(diff);
+            }, 1000);
+            
+            updateUIState(true);
+        }
+
+        function stopSleep() {
+            clearInterval(timerInterval);
+            const endTime = new Date();
+            const startTime = new Date(JSON.parse(localStorage.getItem('ongoingSleep')).startTime);
+            const duration = endTime - startTime;
+            
+            const record = {
+                id: Date.now().toString(),
+                babyId: data.selectedBabyId,
+                startTime: startTime.toISOString(),
+                endTime: endTime.toISOString(),
+                duration: duration,
+                type: duration > 6 * 60 * 60 * 1000 ? 'night' : 'nap',
+                quality: 0,
+                notes: ''
+            };
+            
+            data.records.unshift(record);
+            saveData(data);
+            localStorage.removeItem('ongoingSleep');
+            
+            updateUIState(false);
+            updateUI();
+        }
+
+        function updateUIState(sleeping) {
+            isSleeping = sleeping;
+            const btn = document.getElementById('actionBtn');
+            const badge = document.getElementById('statusBadge');
+            const timerLabel = document.getElementById('timerLabel');
+            
+            if (sleeping) {
+                btn.className = 'action-btn stop';
+                document.getElementById('btnIcon').textContent = '☀️';
+                document.getElementById('btnText').textContent = 'Wake Up';
+                badge.className = 'status-badge sleeping';
+                badge.textContent = 'SLEEPING';
+                timerLabel.textContent = 'Current sleep duration';
+            } else {
+                btn.className = 'action-btn start';
+                document.getElementById('btnIcon').textContent = '🌙';
+                document.getElementById('btnText').textContent = 'Start Sleep';
+                badge.className = 'status-badge awake';
+                badge.textContent = 'AWAKE';
+                timerLabel.textContent = 'Time since last sleep';
+                
+                const babyRecords = getBabyRecords(data.selectedBabyId);
+                const lastSleep = babyRecords[0];
+                if (lastSleep) {
+                    const lastEnd = new Date(lastSleep.endTime);
+                    updateAwakeTimer(lastEnd);
+                } else {
+                    document.getElementById('timer').textContent = '00:00:00';
+                }
+            }
+        }
+
+        function updateAwakeTimer(lastEnd) {
+            timerInterval = setInterval(() => {
+                const now = new Date();
+                const awakeTime = now - lastEnd;
+                document.getElementById('timer').textContent = formatDuration(awakeTime);
+            }, 1000);
+            
+            const initialAwake = new Date() - lastEnd;
+            document.getElementById('timer').textContent = formatDuration(initialAwake);
+        }
+
+        function checkOngoingSleep() {
+            const ongoing = localStorage.getItem('ongoingSleep');
+            if (ongoing) {
+                const parsed = JSON.parse(ongoing);
+                if (parsed.babyId === data.selectedBabyId) {
+                    sleepStartTime = new Date(parsed.startTime);
+                    timerInterval = setInterval(() => {
+                        const now = new Date();
+                        const diff = now - sleepStartTime;
+                        document.getElementById('timer').textContent = formatDuration(diff);
+                    }, 1000);
+                    updateUIState(true);
+                } else {
+                    updateUIState(false);
+                }
+            } else {
+                updateUIState(false);
+            }
+        }
+
+        function formatDuration(ms) {
+            const seconds = Math.floor((ms / 1000) % 60);
+            const minutes = Math.floor((ms / (1000 * 60)) % 60);
+            const hours = Math.floor(ms / (1000 * 60 * 60));
+            return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        }
+
+        function pad(num) {
+            return num.toString().padStart(2, '0');
+        }
+
+        function updateStats() {
+            const baby = getCurrentBaby();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const todayRecords = getBabyRecords(baby.id).filter(r => {
+                const recordDate = new Date(r.startTime);
+                recordDate.setHours(0, 0, 0, 0);
+                return recordDate.getTime() === today.getTime();
+            });
+            
+            const totalMs = todayRecords.reduce((sum, r) => sum + r.duration, 0);
+            const totalHours = Math.floor(totalMs / (1000 * 60 * 60));
+            const totalMinutes = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60));
+            document.getElementById('totalSleep').textContent = totalHours > 0 ? `${totalHours}h ${totalMinutes}m` : `${totalMinutes}m`;
+            
+            const nightMs = todayRecords.filter(r => {
+                const hour = new Date(r.startTime).getHours();
+                return hour >= 19 || hour < 7;
+            }).reduce((sum, r) => sum + r.duration, 0);
+            document.getElementById('nightSleep').textContent = `${Math.floor(nightMs / (1000 * 60 * 60))}h`;
+            
+            const napCount = todayRecords.filter(r => {
+                const hour = new Date(r.startTime).getHours();
+                return hour >= 7 && hour < 19;
+            }).length;
+            document.getElementById('napCount').textContent = napCount;
+            
+            const avgMs = todayRecords.length > 0 ? totalMs / todayRecords.length : 0;
+            document.getElementById('avgDuration').textContent = `${Math.floor(avgMs / (1000 * 60))}m`;
+        }
+
+        function renderSleepList() {
+            const list = document.getElementById('sleepList');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const todayRecords = getBabyRecords(data.selectedBabyId).filter(r => {
+                const recordDate = new Date(r.startTime);
+                recordDate.setHours(0, 0, 0, 0);
+                return recordDate.getTime() === today.getTime();
+            }).slice(0, 5);
+            
+            if (todayRecords.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🌙</div>
+                        <div>No sleep records yet today</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            list.innerHTML = todayRecords.map(record => {
+                const duration = formatDuration(record.duration);
+                const isNight = record.type === 'night';
+                const start = new Date(record.startTime).toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit'});
+                const end = new Date(record.endTime).toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit'});
+                
+                return `
+                    <div class="sleep-item" onclick="confirmDelete('${record.id}')">
+                        <div>
+                            <div class="sleep-time">
+                                ${start} - ${end}
+                                <span class="sleep-type ${isNight ? 'night' : 'nap'}">${isNight ? 'Night' : 'Nap'}</span>
+                            </div>
+                            <div class="sleep-duration">${duration}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function confirmDelete(id) {
+            if (confirm('Delete this record?')) {
+                data.records = data.records.filter(r => r.id !== id);
+                saveData(data);
+                updateUI();
+            }
+        }
+
+        // Modal functions
+        function showBabySelector() {
+            const selector = document.getElementById('babySelector');
+            selector.innerHTML = data.babies.map(baby => `
+                <div class="baby-option ${baby.id === data.selectedBabyId ? 'selected' : ''}" onclick="selectBaby('${baby.id}')">
+                    <div class="baby-option-avatar" style="background: #${baby.color}">${getAvatar(baby.name)}</div>
+                    <div>
+                        <div style="font-weight: 700;">${baby.name}</div>
+                        <div style="font-size: 13px; opacity: 0.7;">${calculateAge(baby.birthDate)}</div>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('babySelectorModal').classList.add('active');
+        }
+
+        function closeBabySelector() {
+            document.getElementById('babySelectorModal').classList.remove('active');
+        }
+
+        function selectBaby(id) {
+            data.selectedBabyId = id;
+            saveData(data);
+            closeBabySelector();
+            checkOngoingSleep();
+            updateUI();
+        }
+
+        function showBabyListModal() {
+            closeBabySelector();
+            const list = document.getElementById('babyList');
+            list.innerHTML = data.babies.map(baby => `
+                <div class="baby-option" onclick="editBaby('${baby.id}')">
+                    <div class="baby-option-avatar" style="background: #${baby.color}">${getAvatar(baby.name)}</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 700;">${baby.name}</div>
+                        <div style="font-size: 13px; opacity: 0.7;">${calculateAge(baby.birthDate)}</div>
+                    </div>
+                    <span style="opacity: 0.5;">✏️</span>
+                </div>
+            `).join('');
+            
+            document.getElementById('babyListModal').classList.add('active');
+        }
+
+        function closeBabyListModal() {
+            document.getElementById('babyListModal').classList.remove('active');
+        }
+
+        function showAddBabyModal() {
+            closeBabyListModal();
+            document.getElementById('newBabyName').value = '';
+            document.getElementById('newBabyBirth').value = '';
+            selectedColor = '6C63FF';
+            initColorPicker();
+            document.getElementById('addBabyModal').classList.add('active');
+        }
+
+        function closeAddBabyModal() {
+            document.getElementById('addBabyModal').classList.remove('active');
+        }
+
+        function addBaby() {
+            const name = document.getElementById('newBabyName').value.trim();
+            const birthDate = document.getElementById('newBabyBirth').value || null;
+            
+            if (!name) {
+                alert('Please enter a name');
+                return;
+            }
+            
+            const newBaby = {
+                id: Date.now().toString(),
+                name: name,
+                birthDate: birthDate,
+                color: selectedColor
+            };
+            
+            data.babies.push(newBaby);
+            data.selectedBabyId = newBaby.id;
+            saveData(data);
+            
+            closeAddBabyModal();
+            updateUI();
+        }
+
+        function editBaby(id) {
+            closeBabyListModal();
+            editingBabyId = id;
+            const baby = data.babies.find(b => b.id === id);
+            
+            document.getElementById('editBabyName').value = baby.name;
+            document.getElementById('editBabyBirth').value = baby.birthDate || '';
+            document.getElementById('editBabyModal').classList.add('active');
+        }
+
+        function closeEditBabyModal() {
+            document.getElementById('editBabyModal').classList.remove('active');
+            editingBabyId = null;
+        }
+
+        function saveBabyEdit() {
+            if (!editingBabyId) return;
+            
+            const baby = data.babies.find(b => b.id === editingBabyId);
+            baby.name = document.getElementById('editBabyName').value.trim();
+            baby.birthDate = document.getElementById('editBabyBirth').value || null;
+            
+            saveData(data);
+            closeEditBabyModal();
+            updateUI();
+        }
+
+        function deleteCurrentBaby() {
+            if (!editingBabyId) return;
+            if (data.babies.length <= 1) {
+                alert('You must have at least one baby');
+                return;
+            }
+            if (!confirm('Are you sure? This will delete all sleep records for this baby.')) return;
+            
+            data.babies = data.babies.filter(b => b.id !== editingBabyId);
+            data.records = data.records.filter(r => r.babyId !== editingBabyId);
+            data.selectedBabyId = data.babies[0].id;
+            
+            saveData(data);
+            closeEditBabyModal();
+            updateUI();
+        }
+
+        function showBabyModal() {
+            editBaby(data.selectedBabyId);
+        }
+
+        function showAddModal() {
+            const now = new Date();
+            const oneHourAgo = new Date(now - 60 * 60 * 1000);
+            document.getElementById('startTime').value = formatDateTimeLocal(oneHourAgo);
+            document.getElementById('endTime').value = formatDateTimeLocal(now);
+            document.getElementById('addModal').classList.add('active');
+        }
+
+        function closeAddModal() {
+            document.getElementById('addModal').classList.remove('active');
+            resetForm();
+        }
+
+        function selectType(element, type) {
+            document.querySelectorAll('.type-option').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            currentType = type;
+        }
+
+        function setQuality(n) {
+            currentQuality = n;
+            document.querySelectorAll('.star').forEach((star, index) => {
+                star.classList.toggle('active', index < n);
+            });
+        }
+
+        function saveSleep() {
+            const start = new Date(document.getElementById('startTime').value);
+            const end = new Date(document.getElementById('endTime').value);
+            
+            if (end <= start) {
+                alert('End time must be after start time');
+                return;
+            }
+            
+            const record = {
+                id: Date.now().toString(),
+                babyId: data.selectedBabyId,
+                startTime: start.toISOString(),
+                endTime: end.toISOString(),
+                duration: end - start,
+                type: currentType,
+                quality: currentQuality,
+                notes: document.getElementById('sleepNotes').value
+            };
+            
+            data.records.unshift(record);
+            saveData(data);
+            updateUI();
+            closeAddModal();
+        }
+
+        function resetForm() {
+            currentQuality = 0;
+            currentType = 'nap';
+            document.querySelectorAll('.star').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.type-option')[0].classList.add('selected');
+            document.querySelectorAll('.type-option')[1].classList.remove('selected');
+            document.getElementById('sleepNotes').value = '';
+        }
+
+        function showAllHistory() {
+            const baby = getCurrentBaby();
+            const babyRecords = getBabyRecords(baby.id);
+            alert(`${baby.name}'s total records: ${babyRecords.length}\n\nFull history view coming soon!`);
+        }
+
+        function closeModalOnBackground(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html>
